@@ -1,0 +1,523 @@
+import random
+import tkinter as tk
+from tkinter import ttk
+
+# Глобальная переменная для текстового поля
+text_widget = None
+
+def set_text_widget(widget):
+    global text_widget
+    text_widget = widget
+
+def custom_print(*args, **kwargs):
+    global text_widget
+    if text_widget is not None:
+        text_widget.insert(tk.END, " ".join(map(str, args)) + "\n")
+    else:
+        print(*args, **kwargs)
+
+
+class Station:
+    def __init__(self, name, coordinates):
+        self.__name = name
+        self.__coordinates = coordinates
+
+    def getName(self):
+        return self.__name
+
+    def getCoordinates(self):
+        return self.__coordinates
+
+
+class Train:
+    def __init__(self, number, dep_station, des_station, dep_time, des_time):
+        self.__number = number
+        self.__dep_station = dep_station
+        self.__des_station = des_station
+        self.__dep_time = dep_time
+        self.__des_time = des_time
+        self.__vagons = []
+
+
+    def getNumber(self):
+        return self.__number
+
+    def getDep_Station(self):
+        return self.__dep_station
+
+    def getDes_Station(self):
+        return self.__des_station
+
+    def getDep_Time(self):
+        return self.__dep_time
+
+    def getDes_Time(self):
+        return self.__des_time
+
+    def getVagons(self):
+        return self.__vagons
+
+    def add_vagon(self, vagon):
+        self.__vagons.append(vagon)
+
+
+class Vagon:
+    def __init__(self, number):
+        self.__number = number
+
+    def getNumber(self):
+        return self.__number
+
+
+class PassangerVagon(Vagon):
+    def __init__(self, number, seats, price_km):
+        super().__init__(number)
+        self.__seats = seats
+        self.__available_seats = seats
+        self.__price_km = price_km
+        self.__passengers = []
+
+    def getSeats(self):
+        return self.__seats
+
+    def getAvailable_Seats(self):
+        return self.__available_seats
+
+    def getPrice_Km(self):
+        return self.__price_km
+
+    def getPassangers(self):
+        return self.__passengers
+
+    def reserve_seat(self):
+        if self.__available_seats > 0:
+            self.__available_seats -= 1
+            return True
+        return False
+
+    def add_passenger(self, passenger):
+        if self.reserve_seat():
+            self.__passengers.append(passenger)
+            return True
+        return False
+
+
+class SeatVagon(PassangerVagon):
+    def __init__(self, number, seats, price_km):
+        super().__init__(number, seats, price_km)
+
+
+class PlatzcartVagon(PassangerVagon):
+    def __init__(self, number, seats, price_km):
+        super().__init__(number, seats, price_km)
+
+
+class CupeVagon(PassangerVagon):
+    def __init__(self, number, seats, price_km):
+        super().__init__(number, seats, price_km)
+
+
+class ServiceVagon(Vagon):
+    def __init__(self, number, seats, price_km):
+        super().__init__(number)
+        self.__seats = seats
+        self.__price_km = price_km
+
+    def getSeats(self):
+        return self.__seats
+
+    def getPrice_Km(self):
+        return self.__price_km
+
+
+class RestoranVagon(ServiceVagon):
+    def __init__(self, number, seats, price_km):
+        super().__init__(number, seats, price_km)
+
+
+class BufetVagon(ServiceVagon):
+    def __init__(self, number, seats, price_km):
+        super().__init__(number, seats, price_km)
+
+
+class PochtaVagon(ServiceVagon):
+    def __init__(self, number, seats, price_km):
+        super().__init__(number, seats, price_km)
+
+
+class Passenger:
+    def __init__(self, name, need_tv=False, need_phone=False, need_laying_places=False, need_beds=False):
+        self.__name = name
+        self.__need_tv = need_tv if need_tv is not None else random.choice([True, False])
+        self.__need_phone = need_phone if need_phone is not None else random.choice([True, False])
+        self.__need_laying_places = need_laying_places if need_laying_places is not None else random.choice([True, False])
+        self.__need_beds = need_beds if need_beds is not None else random.choice([True, False])
+        self.__ticket = None  # Инициализируем атрибут ticket как None
+
+    def getName(self):
+        return self.__name
+
+    def getNeed_Tv(self):
+        return self.__need_tv
+
+    def getNeed_Phone(self):
+        return self.__need_phone
+
+    def getNeed_Laying_Places(self):
+        return self.__need_laying_places
+
+    def getNeed_Beds(self):
+        return self.__need_beds
+
+    def getTicket(self):
+        return self.__ticket
+
+    def buy_ticket(self, train, dep_date, des, vagon_type, seats_needed=1):
+        for vagon in train.getVagons():
+            if isinstance(vagon, vagon_type) and vagon.available_seats >= seats_needed:
+                for i in range(seats_needed):
+                    vagon.reserve_seat()
+                self.__ticket = Ticket(train, dep_date, des, vagon_type)
+                vagon.add_passenger(self)
+                return self.__ticket
+        return None
+
+
+class Ticket:
+    def __init__(self, train, dep_date, des, vagon_type):
+        self.__train = train
+        self.__dep_date = dep_date
+        self.__des = des
+        self.__vagon_type = vagon_type
+
+    def getTrain(self):
+        return self.__train
+
+    def getDep_Date(self):
+        return self.__dep_date
+
+    def getDes(self):
+        return self.__des
+
+    def getVagon_Type(self):
+        return self.__vagon_type
+
+
+
+class RailwaySimulation:
+    def __init__(self):
+        self.__trains = []
+        self.__stations = []
+        self.__train_status_data = []
+
+    def getTrains(self):
+        return self.__trains
+
+    def getStations(self):
+        return self.__stations
+
+    def getTrain_Status_Data(self):
+        return self.__train_status_data
+
+    def add_train(self, train):
+        self.__trains.append(train)
+
+    def add_station(self, station):
+        self.__stations.append(station)
+
+    def display_train_status(self):
+        self.__train_status_data = []
+        for train in self.__trains:
+            train_data = {
+                "number": train.getNumber(),
+                "dep_station": train.getDep_Station(),
+                "des_station": train.getDes_Station(),
+                "dep_time": train.getDep_Time(),
+                "des_time": train.getDes_Time(),
+                "vagons": []
+            }
+            custom_print(f"Название поезда: {train.getNumber()}")
+            custom_print(f"Станция отправления: {train.getDep_Station().getName()}, Координаты: {train.getDep_Station().getCoordinates()}")
+            custom_print(f"Станция назначения: {train.getDes_Station().getName()}, Координаты: {train.getDes_Station().getCoordinates()}")
+            custom_print(f"Время убытия: {train.getDep_Time()}")
+            custom_print(f"Время прибытия: {train.getDes_Time()}")
+            custom_print("Вагоны:")
+            for vagon in train.getVagons():
+                if isinstance(vagon, PassangerVagon) or isinstance(vagon, ServiceVagon):
+                    vagon_type = type(vagon).__name__
+                    occupied_seats = random.randint(0, vagon.getSeats())
+                    vagon.available_seats = vagon.getSeats() - occupied_seats
+                    train_data["vagons"].append({
+                        "number": vagon.getNumber(),
+                        "type": vagon_type,
+                        "seats": vagon.getSeats(),
+                        "occupied_seats": occupied_seats
+                    })
+                    custom_print(f"  Номер вагона: {vagon.getNumber()}\n Тип вагона: {vagon_type}\n Мест всего: {vagon.getSeats()}\n Свободные места: {vagon.available_seats}\n Занятые места: {occupied_seats}")
+            self.__train_status_data.append(train_data)
+            custom_print("---------------------------------------")
+
+    def display_additional_equipment(self):
+        equipment_counts = {
+            "need_tv": 0,
+            "need_phone": 0,
+            "need_laying_places": 0,
+            "need_beds": 0
+        }
+
+        for train_data in self.__train_status_data:
+            for vagon_data in train_data["vagons"]:
+                for _ in range(vagon_data["occupied_seats"]):
+                    need_tv = random.choice([True, False])
+                    need_phone = random.choice([True, False])
+                    need_laying_places = random.choice([True, False])
+                    need_beds = random.choice([True, False])
+                    if need_tv:
+                        equipment_counts["need_tv"] += 1
+                    if need_phone:
+                        equipment_counts["need_phone"] += 1
+                    if need_laying_places:
+                        equipment_counts["need_laying_places"] += 1
+                    if need_beds:
+                        equipment_counts["need_beds"] += 1
+
+        total_needs = sum(equipment_counts.values())
+
+        custom_print("Общее количество пассажиров, требующих дополнительное оборудование:")
+        custom_print(f"  Пассажиры, требующие TV: {equipment_counts['need_tv']}\n Пассажиры, требующие телефон: {equipment_counts['need_phone']}\n Пассажиры, требующие телефон: {equipment_counts['need_phone']}\n Пассажиры, требующие возможность лежать: {equipment_counts['need_laying_places']}\n Пассажиры, требующие кровати: {equipment_counts['need_beds']}")
+        custom_print(f"  Всего пассажиров, требующих дополнительное оборудование: {total_needs}")
+        custom_print("---------------------------------------")
+
+    def display_vagon_workload(self):
+        custom_print("Загруженность вагонов по типам:")
+        for train_data in self.__train_status_data:
+            custom_print(f"Поезд: {train_data['number']}")
+            for vagon_data in train_data["vagons"]:
+                vagon_number = vagon_data['number']
+                vagon_type = vagon_data['type']
+                seats_total = vagon_data['seats']
+                seats_occupied = vagon_data['occupied_seats']
+                load_percentage = (seats_occupied / seats_total) * 100
+                custom_print(
+                    f"  Номер вагона: {vagon_number}\n Тип вагона: {vagon_type}\n Мест всего: {seats_total}\n Занятые места: {seats_occupied}\n Загруженность: {load_percentage:.2f}%")
+            custom_print("---------------------------------------")
+
+    def display_route_congestion(self):
+        custom_print("Загруженность маршрутов:")
+        for train_data in self.__train_status_data:
+            total_occupied_seats = sum(v["occupied_seats"] for v in train_data["vagons"])
+            total_seats = sum(v["seats"] for v in train_data["vagons"])
+            route_load = total_occupied_seats / total_seats * 100 if total_seats > 0 else 0
+            custom_print(f"Поезд: {train_data['number']}, Загруженность маршрута: {route_load:.2f}%")
+        custom_print("---------------------------------------")
+
+    def display_revenue(self):
+        revenue_train = {}
+        revenue_station = {}
+        revenue_vagon = {}
+
+        for train_data in self.__train_status_data:
+            train_number = train_data["number"]
+            revenue_train[train_number] = 0
+            for vagon_data in train_data["vagons"]:
+                vagon_type = vagon_data["type"]
+                occupied_seats = vagon_data["occupied_seats"]
+                vagon_number = vagon_data["number"]
+                vagon = next((v for v in next(t for t in self.__trains if t.getNumber() == train_number).getVagons() if
+                              v.getNumber() == vagon_number), None)
+                if vagon and (isinstance(vagon, PassangerVagon) or isinstance(vagon, ServiceVagon)):
+                    price_km = vagon.getPrice_Km()
+                    if vagon_type not in revenue_vagon:
+                        revenue_vagon[vagon_type] = 0
+                    revenue_vagon[vagon_type] += occupied_seats * price_km
+                    revenue_train[train_number] += occupied_seats * price_km
+
+                dep_station = train_data["dep_station"].getName()
+                des_station = train_data["des_station"].getName()
+
+                if dep_station not in revenue_station:
+                    revenue_station[dep_station] = 0
+                if des_station not in revenue_station:
+                    revenue_station[des_station] = 0
+
+                revenue_station[dep_station] += revenue_train[train_number]
+                revenue_station[des_station] += revenue_train[train_number]
+
+        custom_print("Выручка по поездам:")
+        for train, revenue in revenue_train.items():
+            custom_print(f"Поезд: {train}, Выручка: {revenue} рублей")
+        custom_print("---------------------------------------")
+
+        custom_print("Выручка по станциям:")
+        for station, revenue in revenue_station.items():
+            custom_print(f"Станция: {station}, Выручка: {revenue} рублей")
+        custom_print("---------------------------------------")
+
+        custom_print("Выручка по типам вагонов:")
+        for vagon_type, revenue in revenue_vagon.items():
+            custom_print(f"Тип вагона: {vagon_type}, Выручка: {revenue} рублей")
+        custom_print("---------------------------------------")
+
+    def passengers_not_buy_tickets(self):
+        reasons = {}  # Словарь для хранения причин неудачной покупки билета и их количества
+
+        for train in self.__trains:
+            for vagon in train.getVagons():
+                if isinstance(vagon, PassangerVagon):
+                    for _ in range(random.randint(10, 20)):
+                        need_tv = random.choice([True, False])
+                        need_phone = random.choice([True, False])
+                        need_laying_places = random.choice([True, False])
+                        need_beds = random.choice([True, False])
+                        passenger = Passenger(f"Пассажир-{random.randint(1, 100)}", need_tv, need_phone, need_laying_places, need_beds)
+                        purchase_probability = random.random()  # Случайная вероятность успешной покупки билета
+                        if purchase_probability >= 0.8 and vagon.reserve_seat():
+                            # Если есть свободные места и вероятность покупки билета выше порогового значения
+                            vagon.add_passenger(passenger)
+                        else:
+                            # Если пассажир не смог купить билет по какой-то причине
+                            reason = "Недостаточно свободных мест" if not vagon.reserve_seat() else "Не хватило денег для оплаты билета"
+                            reasons[reason] = reasons.get(reason, 0) + 1
+
+        custom_print("Пассажиры, которые не смогли купить билеты:")
+        if reasons:
+            custom_print(f"Общее количество: {sum(reasons.values())}")
+            custom_print("Причины отказа в продаже билетов:")
+            for reason, count in reasons.items():
+                custom_print(f" {reason}: {count}")
+        else:
+            custom_print("Все пассажиры успешно купили билеты.")
+        custom_print("---------------------------------------")
+
+
+def random_station():
+    station_names = ["Московская", "Петербургская", "Ленинградская", "Петра-Сухова", "Киевская", "Вологодская", "Красноярская", "Белоярская"]
+    name = random.choice(station_names)
+    coordinates = (random.uniform(50.0, 60.0), random.uniform(30.0, 40.0))
+    return Station(name, coordinates)
+
+
+def random_vagon(vagon_number):
+    vagon_types = [SeatVagon, PlatzcartVagon, CupeVagon, RestoranVagon, BufetVagon, PochtaVagon, ServiceVagon]
+    VagonClass = random.choice(vagon_types)
+    seats = random.randint(20, 100)
+    price_km = random.randint(100, 200)
+    return VagonClass(f"Вагон-{vagon_number}", seats, price_km)
+
+
+def random_train(train_number, stations):
+    dep_station, des_station = random.sample(stations, 2)
+    dep_time = f"{random.randint(0, 23):02}:{random.randint(0, 59):02}"
+    des_time = f"{random.randint(0, 23):02}:{random.randint(0, 59):02}"
+    train = Train(f"Поезд-{train_number}", dep_station, des_station, dep_time, des_time)
+    vagon = random_vagon(1)
+    train.add_vagon(vagon)
+    for i in range(2, random.randint(2, 5) + 1):
+        vagon = random_vagon(i)
+        train.add_vagon(vagon)
+    for i in range(random.randint(1, 3)):
+        vagon = random_vagon(i)
+        train.add_vagon(vagon)
+    return train
+
+
+
+def random_data(simulation, num_stations=8, num_trains=None):
+    num_trains = random.randint(2, 7) if num_trains is None else num_trains
+    stations = [random_station() for _ in range(num_stations)]
+    for station in stations:
+        simulation.add_station(station)
+
+    trains = [random_train(i + 1, stations) for i in range(num_trains)]
+    for train in trains:
+        simulation.add_train(train)
+
+
+simulation = RailwaySimulation()
+random_data(simulation)
+simulation.display_train_status()
+simulation.display_additional_equipment()
+simulation.display_vagon_workload()
+simulation.display_route_congestion()
+simulation.display_revenue()
+simulation.passengers_not_buy_tickets()
+
+
+class RailwaySimulationTkinter:
+    def __init__(self):
+        self.__root = tk.Tk()
+        self.__root.title("Симуляция железной дороги")
+
+        self.__simulation = RailwaySimulation()
+        random_data(self.__simulation)
+
+        self.__control_frame = ttk.Frame(self.__root)
+        self.__control_frame.pack(side=tk.TOP, fill=tk.X)
+
+        self.__start_button = ttk.Button(self.__control_frame, text="Запустить симуляцию", command=self.start_simulation)
+        self.__start_button.pack(side=tk.LEFT, padx=10, pady=10)
+
+        self.__stop_button = ttk.Button(self.__control_frame, text="Остановить симуляцию", command=self.stop_simulation)
+        self.__stop_button.pack(side=tk.LEFT, padx=10, pady=10)
+        self.__stop_button.config(state=tk.DISABLED)
+
+        self.__text_box = tk.Text(self.__root, wrap=tk.WORD, width=100, height=40, font=("Helvetica", 12))  # Увеличенный размер шрифта
+        self.__text_box.pack(pady=10, expand=True, fill=tk.BOTH)  # Расширение по обе стороны
+
+        set_text_widget(self.__text_box)
+
+        self.__running = False
+
+    def getRoot(self):
+        return self.__root
+
+    def start_simulation(self):
+        if not self.__running:
+            self.__running = True
+            self.__start_button.config(state=tk.DISABLED)
+            self.__stop_button.config(state=tk.NORMAL)
+            self.update_stats()
+
+    def stop_simulation(self):
+        if self.__running:
+            self.__running = False
+            self.__start_button.config(state=tk.NORMAL)
+            self.__stop_button.config(state=tk.DISABLED)
+            self.clear_text_box()
+
+    def clear_text_box(self):
+        # Сохраняем текущее положение прокрутки
+        current_scroll_position = self.__text_box.yview()
+        self.__text_box.delete(1.0, tk.END)
+        # Восстанавливаем положение прокрутки
+        self.__text_box.yview_moveto(current_scroll_position[0])
+
+    def update_stats(self):
+        if not self.__running:
+            return
+
+        # Сохраняем текущее положение прокрутки
+        current_scroll_position = self.__text_box.yview()
+
+        self.__text_box.delete(1.0, tk.END)
+
+        self.__simulation.display_train_status()
+        self.__simulation.display_additional_equipment()
+        self.__simulation.display_vagon_workload()
+        self.__simulation.display_route_congestion()
+        self.__simulation.display_revenue()
+        self.__simulation.passengers_not_buy_tickets()
+
+        # Восстанавливаем положение прокрутки
+        self.__text_box.yview_moveto(current_scroll_position[0])
+
+        self.__root.after(5000, self.update_stats)
+
+
+def main():
+    app = RailwaySimulationTkinter()
+    app.getRoot().mainloop()
+
+
+if __name__ == "__main__":
+    main()
